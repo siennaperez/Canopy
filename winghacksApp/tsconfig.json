@@ -7,12 +7,17 @@
         "./*"
       ]
     },
-    "target": "ES2020",  // or higher
-    "lib": ["ES2020", "DOM"]
+    "target": "ES2020",
+    "lib": [
+      "ES2020",
+      "DOM"
+    ]
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
-    "app/(login)/login.js"
+    "app/(login)/login.js",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts"
   ]
 }

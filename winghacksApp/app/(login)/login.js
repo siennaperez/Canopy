@@ -4,8 +4,6 @@ import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://localhost:3000/api'; // Change this to your server URL
-
 const LoginScreen = () => {
   const router = useRouter();
   const [username, setUsername] = useState('');
@@ -17,27 +15,12 @@ const LoginScreen = () => {
       Alert.alert('Error', 'Please enter both username and password');
       return;
     }
-    
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Login failed');
-      }
-
-      // Store user session
-      await AsyncStorage.setItem('currentUser', JSON.stringify(data.user));
-      router.replace('/(tabs)');
+      // Temporary: Skip backend validation
+      await AsyncStorage.setItem('currentUser', JSON.stringify({ username }));
+      router.replace('/(tabs)/');
     } catch (error) {
       console.error('Login error:', error);
       Alert.alert('Error', error.message || 'Failed to log in');
@@ -46,36 +29,8 @@ const LoginScreen = () => {
     }
   };
 
-
-  const handleCreateAccount = async () => {
-    router.replace('/create-account');
-    
-    setLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Registration failed');
-      }
-
-      Alert.alert('Success', 'Account created successfully');
-      
-      // Log in automatically after successful registration
-      await handleLogin();
-    } catch (error) {
-      console.error('Signup error:', error);
-      Alert.alert('Error', error.message || 'Failed to create account');
-    } finally {
-      setLoading(false);
-    }
+  const handleCreateAccount = () => {
+    router.push('/(login)/create-account');
   };
 
   return (
@@ -106,6 +61,7 @@ const LoginScreen = () => {
               secureTextEntry
               value={password}
               onChangeText={setPassword}
+              autoCapitalize="none"
               editable={!loading}
             />
 
@@ -126,7 +82,7 @@ const LoginScreen = () => {
             disabled={loading}
           >
             <Text style={styles.buttonText}>
-              {loading ? 'Loading...' : 'Create new account'}
+              Create new account
             </Text>
           </TouchableOpacity>
         </View>
