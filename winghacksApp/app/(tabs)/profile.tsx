@@ -44,7 +44,7 @@ const ProfileScreen = () => {
 
     // if (!result.canceled) {
     //   setImage(result.assets[0].uri);
-    // }
+    // } 
   };
 
   return (
@@ -99,7 +99,7 @@ const ProfileScreen = () => {
               editable={editMode}
               value={year}
               onChangeText={setYear}
-            />
+            /> 
 
             <Text style={styles.label}>Major</Text>
             <TextInput
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   input: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f0eded',
     padding: 12,
     borderRadius: 8,
     marginBottom: 16,

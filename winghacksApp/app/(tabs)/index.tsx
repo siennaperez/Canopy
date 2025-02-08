@@ -206,14 +206,11 @@ const IndexScreen = () => {
           backgroundColor: '#E3F4E0',
           paddingTop: 80,
         }}
-        />
-
-          {/* Add Friend Button below card*/}
-          <TouchableOpacity style={styles.addFriendButton} onPress={() => console.log('Add Friend Pressed')}>
-          <Text style={styles.addFriendButtonText}>Add Friend</Text>
-          </TouchableOpacity>
-
-                
+      />
+      {/* Add Friend Button below card*/}
+      <TouchableOpacity style={styles.addFriendButton} onPress={() => console.log('Add Friend Pressed')}>
+        <Text style={styles.addFriendButtonText}>Add Friend</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -404,7 +401,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },  
-
 });
 
 export default IndexScreen;
