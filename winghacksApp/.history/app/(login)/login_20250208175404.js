@@ -49,7 +49,11 @@ const LoginScreen = () => {
 
   const handleCreateAccount = async () => {
     router.replace('/create-account');
-    
+    if (!username || !password) {
+      Alert.alert('Error', 'Please enter both username and password');
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await fetch(`${API_URL}/register`, {
