@@ -208,12 +208,9 @@ const IndexScreen = () => {
         }}
       />
       {/* Add Friend Button */}
-    <TouchableOpacity
-      style={styles.addFriendButton}
-      onPress={() => console.log('Add Friend Pressed')}
-    >
-      <Text style={styles.addFriendButtonText}>Add Friend</Text>
-    </TouchableOpacity>
+      <TouchableOpacity style={styles.addFriendButton} onPress={() => console.log('Add Friend Pressed')}>
+        <Text style={styles.addFriendButtonText}>Add Friend</Text>
+      </TouchableOpacity>
     </View>
   );
 };
