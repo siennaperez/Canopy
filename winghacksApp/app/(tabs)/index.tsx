@@ -207,6 +207,13 @@ const IndexScreen = () => {
           paddingTop: 80,
         }}
       />
+      {/* Add Friend Button */}
+    <TouchableOpacity
+      style={styles.addFriendButton}
+      onPress={() => console.log('Add Friend Pressed')}
+    >
+      <Text style={styles.addFriendButtonText}>Add Friend</Text>
+    </TouchableOpacity>
     </View>
   );
 };
@@ -378,6 +385,25 @@ const styles = StyleSheet.create({
     textAlign: 'center', // Centered text
     marginVertical: 8, // Spacing around the text
   },
+  addFriendButton: {
+    position: 'absolute',
+    bottom: 90,
+    alignSelf: 'center',
+    backgroundColor: '#FFCDAB',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 5,
+  },
+  addFriendButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },  
 });
 
 export default IndexScreen;
