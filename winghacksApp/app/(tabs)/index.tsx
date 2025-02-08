@@ -207,7 +207,7 @@ const IndexScreen = () => {
           paddingTop: 80,
         }}
       />
-      {/* Add Friend Button */}
+      {/* Add Friend Button below card*/}
       <TouchableOpacity style={styles.addFriendButton} onPress={() => console.log('Add Friend Pressed')}>
         <Text style={styles.addFriendButtonText}>Add Friend</Text>
       </TouchableOpacity>
