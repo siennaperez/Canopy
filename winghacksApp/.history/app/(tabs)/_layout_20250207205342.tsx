@@ -31,7 +31,7 @@ export default function TabLayout() {
         name="explore"
         options={{
           title: 'Messages',
-          tabBarIcon: ({ color }) => <Ionicons name='chatbubbles' size={28} color={color}/>
+          tabBarIcon: ({ color }) => <Ionicons name='paper-plane' size={28} color={color}/>
         }}
       />
       <Tabs.Screen
