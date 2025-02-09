@@ -2,7 +2,7 @@ const url = 'https://api.openai.com/v1/chat/completions';
 
 const headers = {
     'Content-Type': 'application/json',
-    'Authorization' : 'Bearer ADD KEY HERE'
+    'Authorization' : 'Bearer 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'
 }
 
 const body = {
