@@ -120,7 +120,7 @@ export default function ProfileScreen() {
     <ScrollView style={styles.container}>
       {/* Logout Button */}
       <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
-        <Ionicons name="log-out-outline" size={24} color="#000000" />
+        <Ionicons name="log-out-outline" size={24} color="#ffffff" />
       </TouchableOpacity>
 
       <View style={styles.content}>
@@ -197,17 +197,21 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#B5D1C9',
+    backgroundColor: '#CDE2D0',
   },
   content: {
     padding: 20,
   },
   header: {
-    fontSize: 24,
+    fontSize: 30,
     fontWeight: 'bold',
     marginBottom: 20,
-    marginTop: 80,
+    marginTop: 100,
     textAlign: 'center',
+    color: '#ffffff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.25,
   },
   imageContainer: {
     alignItems: 'center',
@@ -215,13 +219,13 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   profileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 130,
+    height: 130,
+    borderRadius: 65,
   },
   placeholderImage: {
-    width: 120,
-    height: 120,
+    width: 150,
+    height: 150,
     borderRadius: 60,
     backgroundColor: '#E1E1E1',
     justifyContent: 'center',
@@ -260,23 +264,32 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
   saveButton: {
-    backgroundColor: '#F8B195',
+    backgroundColor: '#FFCDAB',
     borderRadius: 25,
     padding: 15,
     alignItems: 'center',
     marginBottom: 15,
+    width: 160,
+    alignContent: 'center',
+    alignSelf: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
   },
   buttonDisabled: {
     opacity: 0.7,
   },
   buttonText: {
-    color: '#000000',
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.25,
   },
   logoutButton: {
     position: 'absolute',
-    top: 50,
+    top: 65,
     left: 20,
     backgroundColor: '#FFCDAB',
     padding: 10,
