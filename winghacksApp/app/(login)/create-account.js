@@ -30,7 +30,7 @@ const CreateAccountScreen = () => {
 
     } catch (error) {
       console.error('Create account error:', error);
-      Alert.alert('Error', error.message || 'Failed to create account');
+      // Alert.alert('Error', error.message || 'Failed to create account');
     }
   };
 

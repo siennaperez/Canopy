@@ -94,12 +94,15 @@ const IndexScreen = () => {
             const usersData = snapshot.val();
             const currentUserData = usersData[currentUser.uid];
             
-            // Convert users data to array and calculate match scores
             const users: UserProfile[] = Object.entries(usersData)
               .filter(([id]) => id !== currentUser.uid) // Exclude current user
               .map(([id, data]: [string, any]) => {
-                // Calculate match score
-                const matchScore = calculateMatchScore(currentUserData, data);
+                let matchScore = 0;
+
+                // Calculate match score only if the current user has filled in their information
+                if (currentUserData && currentUserData.displayName && currentUserData.interests) {
+                  matchScore = calculateMatchScore(currentUserData, data);
+                }
                 
                 return {
                   id,
@@ -122,7 +125,7 @@ const IndexScreen = () => {
           }
           setLoading(false);
         }, (error) => {
-          console.error('Error fetching users:', error);
+          // console.error('Error fetching users:', error);
           setError(error.message);
           setLoading(false);
         });
