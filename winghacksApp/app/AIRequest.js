@@ -1,8 +1,11 @@
+//const API = process.env.EXPO_PUBLIC_API_URL;
 const url = 'https://api.openai.com/v1/chat/completions';
+
+const OPENAI_API_KEY = process.env.EXPO_PUBLIC_API_KEY;
 
 const headers = {
     'Content-Type': 'application/json',
-    'Authorization' : 'Bearer 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'
+    Authorization: `Bearer ${OPENAI_API_KEY}`
 }
 
 const body = {
@@ -15,6 +18,16 @@ const body = {
 
 const method = "POST"
 
-const getRequest = () =>fetch(url, {method, headers, body: JSON.stringify(body)})
+const getRequest = async () => { 
+    console.log("Headers: ", headers)
+
+    const response = await fetch(url, {method, headers, body: JSON.stringify(body)})
+
+    if (!response.ok) {
+        throw new Error(`Request failed with status: ${response.status}`);
+    }
+
+    return response.json();
+ }
 
 export default getRequest

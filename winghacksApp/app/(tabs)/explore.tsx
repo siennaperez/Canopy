@@ -10,8 +10,8 @@ const ExploreScreen = () => {
     try {
       console.log("Surprise me button pressed");
       const response = await getRequest();
-      const data = await response.json();
-      setSurpriseText(data.choices[0].message.content); // Store fetched text in state
+
+      setSurpriseText(response.choices[0].message.content); // Store fetched text in state
     } catch (error) {
       console.error(error);
       setSurpriseText("Failed to load suggestion.");
