@@ -37,7 +37,10 @@ const LoginScreen = () => {
       <ThemedView style={styles.container}>
         <View style={styles.contentContainer}>
           <Image source={require('../../assets/images/logo_clear.png')} style={styles.logopic} />
-          <View style={styles.inputContainer}>
+          <Text style={styles.canopyText}>
+              Canopy
+            </Text>
+            <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
               placeholder="Email"
@@ -89,11 +92,11 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#B5D1C9',
+    backgroundColor: '#CDE2D0',
   },
   container: {
     flex: 1,
-    backgroundColor: '#B5D1C9',
+    backgroundColor: '#CDE2D0',
   },
   contentContainer: {
     flex: 1,
@@ -107,7 +110,7 @@ const styles = StyleSheet.create({
   logo: {
     width: 120,
     height: 120,
-    backgroundColor: '#E8E8E8',
+    backgroundColor: '#CDE2D0',
     borderRadius: 60,
     justifyContent: 'center',
     alignItems: 'center',
@@ -165,6 +168,14 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginTop: 80,
   },
+  canopyText: {
+    fontSize: 40,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#ffffff',
+    marginBottom: -80,
+    marginTop: -80,
+  }
 });
 
 export default LoginScreen;
