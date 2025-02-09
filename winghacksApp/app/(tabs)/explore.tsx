@@ -1,9 +1,30 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Dimensions } from "react-native";
+import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Dimensions, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import  getRequest  from "../AIRequest";
 
+const Avatar = ({ source }) => {
+  return (
+    <Image source={source} style={styles.avatarImage} />
+  );
+};
+const AvatarScroll = ({ source }) => {
+  return (
+    <Image source={source} style={styles.avatarImageScroll} />
+  );
+};
+
 const ExploreScreen = () => {
+  // Static image sources
+  const pic1 = require('../../assets/images/lincy.png');
+  const pic2 = require('../../assets/images/sienna.png');
+  const pic3 = require('../../assets/images/jenna.png');
+
+  const messages = [
+    { username: "Lincy Phipps", message: "Hey there!", avatar: pic1 },
+    { username: "Sienna Perez", message: "Let's meet up!", avatar: pic2 },
+    { username: "Jenna Fonsing", message: "Check this out!", avatar: pic3 }
+  ];
   const [surpriseText, setSurpriseText] = useState<string | null>(null);
 
   const handleSurpriseMe = async () => {
@@ -17,35 +38,30 @@ const ExploreScreen = () => {
       setSurpriseText("Failed to load suggestion.");
     }
   };
+
   return (
     <View style={styles.container}>
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search"
-          placeholderTextColor="#aaa"
-        />
+        <TextInput style={styles.searchInput} placeholder="Search" placeholderTextColor="#aaa" />
       </View>
 
       {/* Friends Section */}
       <Text style={styles.sectionTitle}>Your friends</Text>
       <ScrollView horizontal style={styles.friendsContainer}>
-        {[1, 2, 3, 4, 5].map((_, index) => (
-          <View key={index} style={styles.friendAvatar}></View>
-        ))}
+        <AvatarScroll source={pic1}  />
+        <AvatarScroll source={pic2}  />
+        <AvatarScroll source={pic3}/>
       </ScrollView>
 
       {/* Messages Section */}
       <Text style={styles.sectionTitle}>Messages</Text>
       <View style={styles.messagesContainer}>
-        {[
-          { username: "Alex", message: "Hey there!" },
-          { username: "Taylor", message: "Let's meet up!" },
-          { username: "Jordan", message: "Check this out!" },
-        ].map((chat, index) => (
+        {messages.map((chat, index) => (
           <View key={index} style={styles.messageItem}>
-            <View style={styles.messageAvatar}></View>
+            <View style={styles.messageAvatar}>
+              <Avatar source={chat.avatar} />
+            </View>
             <View style={styles.messageText}>
               <Text style={styles.username}>{chat.username}</Text>
               <Text style={styles.message}>{chat.message}</Text>
@@ -54,9 +70,8 @@ const ExploreScreen = () => {
           </View>
         ))}
       </View>
-
-      {/* Surprise Me Section */}
-      <TouchableOpacity style={styles.surpriseContainer} onPress={handleSurpriseMe}>
+    {/* Surprise Me Section */}
+    <TouchableOpacity style={styles.surpriseContainer} onPress={handleSurpriseMe}>
         <Text style={styles.surpriseTitle}>
           {surpriseText || "Not sure what to do with a friend?"}
         </Text>
@@ -100,6 +115,7 @@ const styles = StyleSheet.create({
   friendsContainer: {
     flexDirection: "row",
     marginBottom: 0,
+    padding: -100,
   },
   friendAvatar: {
     width: 80,
@@ -169,6 +185,19 @@ const styles = StyleSheet.create({
   surpriseButtonText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+  avatarImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 10,
+  },
+  avatarImageScroll: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginRight: 12,
+    marginBottom: -20,
   },
 });
 
