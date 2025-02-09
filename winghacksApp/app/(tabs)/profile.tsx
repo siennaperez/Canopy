@@ -124,7 +124,7 @@ export default function ProfileScreen() {
       </TouchableOpacity>
 
       <View style={styles.content}>
-        <Text style={styles.header}>Profile</Text>
+        <Text style={styles.header}>{userProfile.displayName}</Text>
 
         {/* Profile Picture */}
         <TouchableOpacity onPress={handleImagePick} style={styles.imageContainer}>

@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
     bottom: 115,
     alignSelf: 'center',
     backgroundColor: '#FFCDAB',
-    paddingVertical: 12,
+    paddingVertical: 8,
     paddingHorizontal: 24,
     borderRadius: 25,
     shadowColor: '#000',

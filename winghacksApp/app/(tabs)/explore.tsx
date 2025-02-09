@@ -85,7 +85,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 10,
     marginBottom: 16,
-    marginVertical: 30,
+    marginVertical: 50,
   },
   searchInput: {
     fontSize: 16,
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    marginVertical: 12,
+    marginVertical: 5,
   },
   friendsContainer: {
     flexDirection: "row",

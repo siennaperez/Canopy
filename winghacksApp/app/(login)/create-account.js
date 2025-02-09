@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { auth, db } from '../../firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 
 const CreateAccountScreen = () => {
@@ -19,11 +19,13 @@ const CreateAccountScreen = () => {
       return;
     }
 
+    setLoading(true);
     try {
       // Create authentication user
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
+      await updateProfile(user, { displayName: name });
       router.replace('/(tabs)/');
 
     } catch (error) {
