@@ -15,6 +15,7 @@ Below are the key libraries used in this project:
 3. **@expo/vector-icons** - Icon library for UI.
 4. **expo-router** - For routing and navigation.
 5. **@react-native-community/slider** - Slider component for filters.
+6. **react-native-deck-swiper** - For card-swiping functionality.
 
 ### Setup Instructions:
 1. Clone the repository:
