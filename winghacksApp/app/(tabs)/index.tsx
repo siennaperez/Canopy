@@ -24,6 +24,7 @@ interface UserProfile {
   major: string;
   interests: string;
   image: string;
+  matchScore?: number;
 }
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -53,6 +54,9 @@ const IndexScreen = () => {
             <Image source={{ uri: item.image }} style={styles.profileImage} />
           </View>
           <Text style={styles.profileName}>{item.displayName}</Text>
+          {item.matchScore && (
+            <Text style={styles.matchScore}>{item.matchScore}% Match</Text>
+          )}
         </View>
 
         <View style={styles.cardContent}>
@@ -84,26 +88,31 @@ const IndexScreen = () => {
         }
 
         const usersRef = ref(database, 'users');
-        console.log('Attempting to fetch data from:', usersRef.toString());
         
         const unsubscribe = onValue(usersRef, (snapshot) => {
-          console.log('Database snapshot:', { 
-            exists: snapshot.exists(),
-            childrenCount: snapshot.size,
-            key: snapshot.key
-          });
-          
           if (snapshot.exists()) {
             const usersData = snapshot.val();
-            const users: UserProfile[] = Object.entries(usersData).map(([id, data]: [string, any]) => ({
-              id,
-              displayName: data.displayName || '',
-              organizations: data.organizations || '',
-              year: data.year || '',
-              major: data.major || '',
-              interests: data.interests || '',
-              image: data.image || ''
-            }));
+            const currentUserData = usersData[currentUser.uid];
+            
+            // Convert users data to array and calculate match scores
+            const users: UserProfile[] = Object.entries(usersData)
+              .filter(([id]) => id !== currentUser.uid) // Exclude current user
+              .map(([id, data]: [string, any]) => {
+                // Calculate match score
+                const matchScore = calculateMatchScore(currentUserData, data);
+                
+                return {
+                  id,
+                  displayName: data.displayName || '',
+                  organizations: data.organizations || '',
+                  year: data.year || '',
+                  major: data.major || '',
+                  interests: data.interests || '',
+                  image: data.image || '',
+                  matchScore // Add match score to user profile
+                };
+              })
+              .sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0)); // Sort by match score
             
             setUserData(users);
             setFilteredData(users);
@@ -128,6 +137,50 @@ const IndexScreen = () => {
 
     fetchUsers();
   }, []);
+
+  const calculateMatchScore = (currentUser: any, otherUser: any): number => {
+    let score = 0;
+    const weights = {
+      interests: 0.4, // 40% weight
+      organizations: 0.3, // 30% weight
+      major: 0.2, // 20% weight
+      year: 0.1 // 10% weight
+    };
+
+    // Compare interests (40%)
+    if (currentUser.interests && otherUser.interests) {
+      const currentInterests = currentUser.interests.toLowerCase().split(',').map((i: string) => i.trim());
+      const otherInterests = otherUser.interests.toLowerCase().split(',').map((i: string) => i.trim());
+      const commonInterests = currentInterests.filter((interest: string) => 
+        otherInterests.includes(interest)
+      );
+      score += (commonInterests.length / Math.max(currentInterests.length, 1)) * weights.interests * 100;
+    }
+
+    // Compare organizations (30%)
+    if (currentUser.organizations && otherUser.organizations) {
+      const currentOrgs = currentUser.organizations.toLowerCase().split(',').map((o: string) => o.trim());
+      const otherOrgs = otherUser.organizations.toLowerCase().split(',').map((o: string) => o.trim());
+      const commonOrgs = currentOrgs.filter((org: string) => 
+        otherOrgs.includes(org)
+      );
+      score += (commonOrgs.length / Math.max(currentOrgs.length, 1)) * weights.organizations * 100;
+    }
+
+    // Compare major (20%)
+    if (currentUser.major && otherUser.major && 
+        currentUser.major.toLowerCase() === otherUser.major.toLowerCase()) {
+      score += weights.major * 100;
+    }
+
+    // Compare year (10%)
+    if (currentUser.year && otherUser.year && 
+        currentUser.year === otherUser.year) {
+      score += weights.year * 100;
+    }
+
+    return Math.round(score);
+  };
 
   const onSwipedLeft = (cardIndex: number) => {
     console.log(`Swiped left on card ${cardIndex}`);
@@ -375,6 +428,12 @@ const styles = StyleSheet.create({
     color: '#333',
     textAlign: 'center',
     marginTop: 15,
+  },
+  matchScore: {
+    fontSize: 18,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 5,
   },
   cardContent: {
     alignItems: 'center',
