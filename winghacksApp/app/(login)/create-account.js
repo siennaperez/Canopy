@@ -44,6 +44,7 @@ const CreateAccountScreen = () => {
             TextColor="#666"
             value={name}
             onChangeText={setName}
+            placeholderTextColor='#000'
             autoCapitalize="words"
             editable={!loading}
           />
@@ -55,6 +56,7 @@ const CreateAccountScreen = () => {
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
+            placeholderTextColor='#000'
             keyboardType="email-address"
             editable={!loading}
           />
@@ -64,6 +66,7 @@ const CreateAccountScreen = () => {
             placeholder="Password"
             TextColor="#666"
             value={password}
+            placeholderTextColor='#000'
             onChangeText={setPassword}
             secureTextEntry
             autoCapitalize="none"
