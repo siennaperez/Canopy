@@ -2,31 +2,29 @@ import React, { useState } from 'react';
 import { StyleSheet, TextInput, TouchableOpacity, View, Text, SafeAreaView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { auth } from '../../firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 const LoginScreen = () => {
   const router = useRouter();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!username || !password) {
-      Alert.alert('Error', 'Please enter both username and password');
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter both email and password');
       return;
     }
 
-    setLoading(true);
+
     try {
-      // Temporary: Skip backend validation
-      await AsyncStorage.setItem('currentUser', JSON.stringify({ username }));
+      await signInWithEmailAndPassword(auth, email, password);
       router.replace('/(tabs)/');
     } catch (error) {
       console.error('Login error:', error);
       Alert.alert('Error', error.message || 'Failed to log in');
-    } finally {
-      setLoading(false);
-    }
+    } 
   };
 
   const handleCreateAccount = () => {
@@ -46,17 +44,18 @@ const LoginScreen = () => {
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
-              placeholder="username"
+              placeholder="Email"
               placeholderTextColor="#666"
-              value={username}
-              onChangeText={setUsername}
+              value={email}
+              onChangeText={setEmail}
               autoCapitalize="none"
+              keyboardType="email-address"
               editable={!loading}
             />
 
             <TextInput
               style={styles.input}
-              placeholder="password"
+              placeholder="Password"
               placeholderTextColor="#666"
               secureTextEntry
               value={password}
