@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { ThemedView } from '@/components/ThemedView';
 import { auth } from '../../firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { Image } from 'react-native';
 
 const LoginScreen = () => {
   const router = useRouter();
@@ -35,12 +36,7 @@ const LoginScreen = () => {
     <SafeAreaView style={styles.safeArea}>
       <ThemedView style={styles.container}>
         <View style={styles.contentContainer}>
-          <View style={styles.logoContainer}>
-            <View style={styles.logo}>
-              <Text style={styles.logoText}>logo</Text>
-            </View>
-          </View>
-
+          <Image source={require('../../assets/images/logo_clear.png')} style={styles.logopic} />
           <View style={styles.inputContainer}>
             <TextInput
               style={styles.input}
@@ -137,7 +133,12 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     padding: 15,
     alignItems: 'center',
+    alignContent: 'center',
+    alignSelf: 'center',
+    marginBottom: 20,
+    width: '100',
     marginTop: 10,
+
   },
   buttonDisabled: {
     opacity: 0.7,
@@ -147,12 +148,22 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     padding: 15,
     alignItems: 'center',
+    alignContent: 'center',
+    alignSelf: 'center',
     marginBottom: 20,
+    width: '200',
+
   },
   buttonText: {
-    color: '#000000',
+    color: '#ffffff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "800",
+  },
+  logopic: {
+    width: 200,
+    height: 200,
+    alignSelf: 'center',
+    marginTop: 80,
   },
 });
 
