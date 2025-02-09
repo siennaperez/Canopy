@@ -1,8 +1,22 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity, Dimensions } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import  getRequest  from "../AIRequest";
 
 const ExploreScreen = () => {
+  const [surpriseText, setSurpriseText] = useState<string | null>(null);
+
+  const handleSurpriseMe = async () => {
+    try {
+      console.log("Surprise me button pressed");
+      const response = await getRequest();
+      const data = await response.json();
+      setSurpriseText(data.choices[0].message.content); // Store fetched text in state
+    } catch (error) {
+      console.error(error);
+      setSurpriseText("Failed to load suggestion.");
+    }
+  };
   return (
     <View style={styles.container}>
       {/* Search Bar */}
@@ -42,13 +56,18 @@ const ExploreScreen = () => {
       </View>
 
       {/* Surprise Me Section */}
-      <TouchableOpacity style={styles.surpriseContainer}>
-        <Text style={styles.surpriseTitle}>Not sure what to do with a friend?</Text>
-        <Text style={styles.surpriseSubtitle}>We got you.</Text>
+      <TouchableOpacity style={styles.surpriseContainer} onPress={handleSurpriseMe}>
+        <Text style={styles.surpriseTitle}>
+          {surpriseText || "Not sure what to do with a friend?"}
+        </Text>
+        <Text style={styles.surpriseSubtitle}>
+          {surpriseText ? "" : "We got you."}
+        </Text>
         <View style={styles.surpriseButton}>
           <Text style={styles.surpriseButtonText}>Surprise me →</Text>
         </View>
       </TouchableOpacity>
+
     </View>
 
   );
@@ -90,7 +109,7 @@ const styles = StyleSheet.create({
   },
   messagesContainer: {
     marginTop: 10,
-    marginBottom: 150,
+    marginBottom: 330,
   },
   messageItem: {
     flexDirection: "row",
@@ -119,7 +138,11 @@ const styles = StyleSheet.create({
     color: "#555",
   },
   surpriseContainer: {
-    backgroundColor: "#F4ECE9",
+    position: "absolute",
+    bottom: 18, // Move it up or down as needed
+    left: 16,
+    right: 16,
+    backgroundColor: "#E8A68E",
     borderRadius: 12,
     padding: 16,
     alignItems: "center",
@@ -127,7 +150,7 @@ const styles = StyleSheet.create({
   },
   surpriseTitle: {
     fontSize: 18,
-    fontWeight: "bold",
+    //fontWeight: "bold",
     marginBottom: 4,
   },
   surpriseSubtitle: {
@@ -136,7 +159,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   surpriseButton: {
-    backgroundColor: "#F28B34",
+    backgroundColor: "#FFCDAB",
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
