@@ -1,204 +1,281 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Alert,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-// import Icon from 'react-native-vector-icons/Feather';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, ScrollView, TextInput, TouchableOpacity, View, Text, Alert, Image } from 'react-native';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { auth, db } from '../../firebaseConfig';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
 import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
 
-const ProfileScreen = () => {
-  const [editMode, setEditMode] = useState(false);
-  const [bio, setBio] = useState("");
-  const [organization, setOrganization] = useState("");
-  const [year, setYear] = useState("");
-  const [major, setMajor] = useState("");
-  const [interests, setInterests] = useState("");
+export default function ProfileScreen() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
   const [image, setImage] = useState(null);
+  const [userProfile, setUserProfile] = useState({
+    organizations: '',
+    year: '',
+    major: '',
+    interests: ''
+  });
 
-  const handleEditToggle = () => {
-    setEditMode(!editMode);
-    if (!editMode) Alert.alert("Edit Mode Enabled");
-  };
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const user = auth.currentUser;
+        if (!user) {
+          router.replace('/(login)');
+          return;
+        }
+
+        const docRef = doc(db, 'users', user.uid);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setUserProfile({
+            organizations: data.organizations || '',
+            year: data.year || '',
+            major: data.major || '',
+            interests: data.interests || ''
+          });
+          if (data.image) {
+            setImage(data.image);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      }
+    };
+
+    loadProfile();
+  }, []);
 
   const handleImagePick = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission Required', 'We need camera roll permissions.');
+      Alert.alert('Permission Required', 'We need camera roll permissions to change your profile picture.');
       return;
     }
 
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
+      aspect: [1, 1],
       quality: 1,
     });
 
-    // if (!result.canceled) {
-    //   setImage(result.assets[0].uri);
-    // } 
+    if (!result.canceled && result.assets[0].uri) {
+      setImage(result.assets[0].uri);
+      // Save the image URI to Firestore along with other profile data
+      handleSave(result.assets[0].uri);
+    }
+  };
+
+  const handleSave = async (newImage = image) => {
+    if (!auth.currentUser) {
+      Alert.alert('Error', 'Not logged in');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await setDoc(doc(db, 'users', auth.currentUser.uid), {
+        ...userProfile,
+        image: newImage,
+        updatedAt: new Date().toISOString()
+      });
+      
+      Alert.alert('Success', 'Profile saved!');
+    } catch (error) {
+      console.error('Save error:', error);
+      Alert.alert('Error', 'Failed to save profile');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      await AsyncStorage.removeItem('currentUser');
+      router.replace('/(login)');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to log out');
+    }
   };
 
   return (
-    <View style={styles.screenContainer}>
-      {/* Edit Button */}
-      <TouchableOpacity style={styles.editButton} onPress={handleEditToggle}>
-      <Ionicons name="create" size={24} color="#3b82f6" />
-        {/* <Icon name={editMode ? 'check' : 'edit-2'} size={24} color="#3b82f6" /> */}
+    <ScrollView style={styles.container}>
+      {/* Logout Button */}
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Ionicons name="log-out-outline" size={24} color="#000000" />
       </TouchableOpacity>
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.keyboardContainer}
-      >
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
-          {/* Profile Section */}
-          <View style={styles.header}>
-            <View style={styles.profilePicturePlaceholder}>
-              {image && <Image source={{ uri: image }} style={styles.profileImage} />}
+      <View style={styles.content}>
+        <Text style={styles.header}>Profile</Text>
+
+        {/* Profile Picture */}
+        <TouchableOpacity onPress={handleImagePick} style={styles.imageContainer}>
+          {image ? (
+            <Image source={{ uri: image }} style={styles.profileImage} />
+          ) : (
+            <View style={styles.profileImagePlaceholder}>
+              <Ionicons name="person-outline" size={40} color="#666" />
             </View>
-            <Text style={styles.nameText}>Name</Text>
+          )}
+          <View style={styles.editIconContainer}>
+            <Ionicons name="camera" size={20} color="#fff" />
           </View>
+        </TouchableOpacity>
 
-          {/* Bio Section */}
-          <View style={styles.card}>
-            <Text style={styles.label}>Bio</Text>
-            <TextInput
-              style={[styles.input, !editMode && styles.readOnly]}
-              placeholder="Answer the frequently asked question..."
-              multiline
-              editable={editMode}
-              value={bio}
-              onChangeText={setBio}
-            />
-          </View>
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>Organizations</Text>
+          <TextInput
+            style={styles.input}
+            value={userProfile.organizations}
+            onChangeText={(text) => setUserProfile(prev => ({ ...prev, organizations: text }))}
+            placeholder="Enter organizations"
+            placeholderTextColor="#666"
+          />
 
-          {/* Input Fields */}
-          <View style={styles.card}>
-            <Text style={styles.label}>Organization Name(s)</Text>
-            <TextInput
-              style={[styles.input, !editMode && styles.readOnly]}
-              placeholder="Enter organization name(s)"
-              editable={editMode}
-              value={organization}
-              onChangeText={setOrganization}
-            />
+          <Text style={styles.label}>Year</Text>
+          <TextInput
+            style={styles.input}
+            value={userProfile.year}
+            onChangeText={(text) => setUserProfile(prev => ({ ...prev, year: text }))}
+            placeholder="Enter year"
+            placeholderTextColor="#666"
+          />
 
-            <Text style={styles.label}>Year</Text>
-            <TextInput
-              style={[styles.input, !editMode && styles.readOnly]}
-              placeholder="Enter year"
-              editable={editMode}
-              value={year}
-              onChangeText={setYear}
-            /> 
+          <Text style={styles.label}>Major</Text>
+          <TextInput
+            style={styles.input}
+            value={userProfile.major}
+            onChangeText={(text) => setUserProfile(prev => ({ ...prev, major: text }))}
+            placeholder="Enter major"
+            placeholderTextColor="#666"
+          />
 
-            <Text style={styles.label}>Major</Text>
-            <TextInput
-              style={[styles.input, !editMode && styles.readOnly]}
-              placeholder="Enter major"
-              editable={editMode}
-              value={major}
-              onChangeText={setMajor}
-            />
+          <Text style={styles.label}>Interests</Text>
+          <TextInput
+            style={[styles.input, styles.multilineInput]}
+            value={userProfile.interests}
+            onChangeText={(text) => setUserProfile(prev => ({ ...prev, interests: text }))}
+            placeholder="Enter interests"
+            placeholderTextColor="#666"
+            multiline
+            numberOfLines={4}
+          />
+        </View>
 
-            <Text style={styles.label}>Interests</Text>
-            <TextInput
-              style={[styles.input, !editMode && styles.readOnly]}
-              placeholder="Enter interests"
-              editable={editMode}
-              value={interests}
-              onChangeText={setInterests}
-            />
-          </View>
-
-          {/* Floating Button */}
-          <TouchableOpacity style={styles.floatingButton} onPress={handleImagePick}>
-          <Ionicons name="add" size={32} color="#ffffff" />
-            {/* <Icon name="plus" size={32} color="#ffffff" /> */}
-          </TouchableOpacity>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </View>
+        <TouchableOpacity
+          style={[styles.saveButton, loading && styles.buttonDisabled]}
+          onPress={() => handleSave()}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>
+            {loading ? 'Saving...' : 'Save Changes'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  screenContainer: {
+  container: {
     flex: 1,
-    backgroundColor: '#E3F4E0',
+    backgroundColor: '#B5D1C9',
   },
-  keyboardContainer: {
-    flex: 1,
-  },
-  scrollContainer: {
-    padding: 16,
-    paddingTop: 60,
+  content: {
+    padding: 20,
   },
   header: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  profilePicturePlaceholder: {
-    width: 100,
-    height: 100,
-    backgroundColor: '#d3d3d3',
-    borderRadius: 50,
-    overflow: 'hidden',
-  },
-  profileImage: {
-    width: '100%',
-    height: '100%',
-  },
-  nameText: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginTop: 8,
+    marginBottom: 20,
+    marginTop: 80,
+    textAlign: 'center',
   },
-  card: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+  imageContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+    position: 'relative',
+  },
+  profileImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+  },
+  profileImagePlaceholder: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#E0E0E0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  editIconContainer: {
+    position: 'absolute',
+    bottom: 0,
+    right: '35%',
+    backgroundColor: '#FFCDAB',
+    padding: 8,
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  inputContainer: {
+    marginBottom: 20,
   },
   label: {
     fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 5,
+    color: '#000000',
   },
   input: {
-    backgroundColor: '#f0eded',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+    fontSize: 16,
   },
-  readOnly: {
-    backgroundColor: '#e0e0e0',
+  multilineInput: {
+    height: 100,
+    textAlignVertical: 'top',
   },
-  floatingButton: {
-    width: 70,
-    height: 70,
-    backgroundColor: '#3b82f6',
-    borderRadius: 35,
-    justifyContent: 'center',
+  saveButton: {
+    backgroundColor: '#F8B195',
+    borderRadius: 25,
+    padding: 15,
     alignItems: 'center',
-    alignSelf: 'center',
-    marginVertical: 20,
+    marginBottom: 15,
   },
-  editButton: {
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  buttonText: {
+    color: '#000000',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  logoutButton: {
     position: 'absolute',
-    top: 60, // Lowered button position
-    right: 20,
-    zIndex: 1,
-  },
+    top: 50,
+    left: 20,
+    backgroundColor: '#FFCDAB',
+    padding: 10,
+    borderRadius: 20,
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  }
 });
-
-export default ProfileScreen;
