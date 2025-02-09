@@ -1,37 +1,34 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemedView } from '@/components/ThemedView';
+import { auth, db } from '../../firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 
 const CreateAccountScreen = () => {
   const router = useRouter();
   const [name, setName] = useState('');
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleCreateAccount = async () => {
-    if (!name || !username || !password) {
+    if (!name || !email || !password) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
-    setLoading(true);
     try {
-      // Temporary: Store user data directly in AsyncStorage
-      await AsyncStorage.setItem('currentUser', JSON.stringify({ name, username }));
-      Alert.alert('Success', 'Account created successfully', [
-        {
-          text: 'OK',
-          onPress: () => router.replace('/(tabs)/')
-        }
-      ]);
+      // Create authentication user
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      router.replace('/(tabs)/');
+
     } catch (error) {
       console.error('Create account error:', error);
-      Alert.alert('Error', 'Failed to create account');
-    } finally {
-      setLoading(false);
+      Alert.alert('Error', error.message || 'Failed to create account');
     }
   };
 
@@ -44,7 +41,7 @@ const CreateAccountScreen = () => {
           <TextInput
             style={styles.input}
             placeholder="Full Name"
-            placeholderTextColor="#666"
+            TextColor="#666"
             value={name}
             onChangeText={setName}
             autoCapitalize="words"
@@ -53,18 +50,19 @@ const CreateAccountScreen = () => {
 
           <TextInput
             style={styles.input}
-            placeholder="Username"
-            placeholderTextColor="#666"
-            value={username}
-            onChangeText={setUsername}
+            placeholder="Email"
+            TextColor="#666"
+            value={email}
+            onChangeText={setEmail}
             autoCapitalize="none"
+            keyboardType="email-address"
             editable={!loading}
           />
 
           <TextInput
             style={styles.input}
             placeholder="Password"
-            placeholderTextColor="#666"
+            TextColor="#666"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
