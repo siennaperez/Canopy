@@ -2,101 +2,87 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, ScrollView, TextInput, TouchableOpacity, View, Text, Alert, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { auth, db } from '../../firebaseConfig';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { auth, database } from '../../firebase';
 import { signOut } from 'firebase/auth';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
+import { ref, set, onValue } from 'firebase/database';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [image, setImage] = useState(null);
+  const [image, setImage] = useState<string | null>(null);
   const [userProfile, setUserProfile] = useState({
     organizations: '',
     year: '',
     major: '',
-    interests: ''
+    interests: '',
+    image: null,
+    email: '',
+    displayName: ''
   });
 
   useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const user = auth.currentUser;
-        if (!user) {
-          router.replace('/(login)');
-          return;
-        }
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      // Set basic user info
+      setUserProfile(prev => ({
+        ...prev,
+        email: currentUser.email || '',
+        displayName: currentUser.displayName || ''
+      }));
 
-        const docRef = doc(db, 'users', user.uid);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setUserProfile({
-            organizations: data.organizations || '',
-            year: data.year || '',
-            major: data.major || '',
-            interests: data.interests || ''
-          });
+      // Fetch existing profile data
+      const userRef = ref(database, 'users/' + currentUser.uid);
+      onValue(userRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          setUserProfile(prev => ({
+            ...prev,
+            ...data
+          }));
           if (data.image) {
             setImage(data.image);
           }
         }
-      } catch (error) {
-        console.error('Error loading profile:', error);
-      }
-    };
-
-    loadProfile();
+      });
+    } else {
+      // Redirect to login if no user is found
+      router.replace('/(login)');
+    }
   }, []);
 
-  const handleImagePick = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission Required', 'We need camera roll permissions to change your profile picture.');
-      return;
-    }
-
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
-
-    if (!result.canceled && result.assets[0].uri) {
-      setImage(result.assets[0].uri);
-      // Save the image URI to Firestore along with other profile data
-      handleSave(result.assets[0].uri);
-    }
+  const handleInputChange = (field: string, value: string) => {
+    setUserProfile(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
-  const handleSave = async (newImage = image) => {
-    if (!auth.currentUser) {
-      Alert.alert('Error', 'Not logged in');
-      return;
-    }
-
+  const saveProfile = async () => {
     setLoading(true);
-
     try {
-      await setDoc(doc(db, 'users', auth.currentUser.uid), {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        Alert.alert('Error', 'No user logged in');
+        return;
+      }
+
+      await set(ref(database, 'users/' + currentUser.uid), {
         ...userProfile,
-        image: newImage,
+        image,
         updatedAt: new Date().toISOString()
       });
-      
-      Alert.alert('Success', 'Profile saved!');
+      Alert.alert('Success', 'Profile saved successfully!');
     } catch (error) {
-      console.error('Save error:', error);
-      Alert.alert('Error', 'Failed to save profile');
+      console.error('Error saving profile:', error);
+      Alert.alert('Error', 'Failed to save profile. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLogout = async () => {
+  const handleSignOut = async () => {
     try {
       await signOut(auth);
       await AsyncStorage.removeItem('currentUser');
@@ -106,10 +92,34 @@ export default function ProfileScreen() {
     }
   };
 
+  const handleImagePick = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please grant permission to access your photos');
+      return;
+    }
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        setImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Error', 'Failed to pick image');
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
       {/* Logout Button */}
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+      <TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
         <Ionicons name="log-out-outline" size={24} color="#000000" />
       </TouchableOpacity>
 
@@ -121,12 +131,12 @@ export default function ProfileScreen() {
           {image ? (
             <Image source={{ uri: image }} style={styles.profileImage} />
           ) : (
-            <View style={styles.profileImagePlaceholder}>
+            <View style={styles.placeholderImage}>
               <Ionicons name="person-outline" size={40} color="#666" />
             </View>
           )}
-          <View style={styles.editIconContainer}>
-            <Ionicons name="camera" size={20} color="#fff" />
+          <View style={styles.imageOverlay}>
+            <Ionicons name="camera" size={20} color="#666" />
           </View>
         </TouchableOpacity>
 
@@ -135,7 +145,7 @@ export default function ProfileScreen() {
           <TextInput
             style={styles.input}
             value={userProfile.organizations}
-            onChangeText={(text) => setUserProfile(prev => ({ ...prev, organizations: text }))}
+            onChangeText={(text) => handleInputChange('organizations', text)}
             placeholder="Enter organizations"
             placeholderTextColor="#666"
           />
@@ -144,7 +154,7 @@ export default function ProfileScreen() {
           <TextInput
             style={styles.input}
             value={userProfile.year}
-            onChangeText={(text) => setUserProfile(prev => ({ ...prev, year: text }))}
+            onChangeText={(text) => handleInputChange('year', text)}
             placeholder="Enter year"
             placeholderTextColor="#666"
           />
@@ -153,7 +163,7 @@ export default function ProfileScreen() {
           <TextInput
             style={styles.input}
             value={userProfile.major}
-            onChangeText={(text) => setUserProfile(prev => ({ ...prev, major: text }))}
+            onChangeText={(text) => handleInputChange('major', text)}
             placeholder="Enter major"
             placeholderTextColor="#666"
           />
@@ -162,7 +172,7 @@ export default function ProfileScreen() {
           <TextInput
             style={[styles.input, styles.multilineInput]}
             value={userProfile.interests}
-            onChangeText={(text) => setUserProfile(prev => ({ ...prev, interests: text }))}
+            onChangeText={(text) => handleInputChange('interests', text)}
             placeholder="Enter interests"
             placeholderTextColor="#666"
             multiline
@@ -172,7 +182,7 @@ export default function ProfileScreen() {
 
         <TouchableOpacity
           style={[styles.saveButton, loading && styles.buttonDisabled]}
-          onPress={() => handleSave()}
+          onPress={saveProfile}
           disabled={loading}
         >
           <Text style={styles.buttonText}>
@@ -209,21 +219,21 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
   },
-  profileImagePlaceholder: {
+  placeholderImage: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: '#E1E1E1',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  editIconContainer: {
+  imageOverlay: {
     position: 'absolute',
     bottom: 0,
     right: '35%',
-    backgroundColor: '#FFCDAB',
+    backgroundColor: '#FFFFFF',
     padding: 8,
-    borderRadius: 15,
+    borderRadius: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
