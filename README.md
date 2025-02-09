@@ -12,10 +12,12 @@ The goal of this app was to create a safe and welcoming space where gender minor
 Below are the key libraries used in this project:
 1. **React Native** - Framework for mobile app development.
 2. **Expo** - Simplified development and deployment of the app.
-3. **@expo/vector-icons** - Icon library for UI.
-4. **expo-router** - For routing and navigation.
-5. **@react-native-community/slider** - Slider component for filters.
-6. **react-native-deck-swiper** - For card-swiping functionality.
+3. **Firebase** - For backend, authentication and database.
+4. **@expo/vector-icons** - Icon library for UI.
+5. **expo-router** - For routing and navigation.
+6. **@react-native-community/slider** - Slider component for filters.
+7. **react-native-deck-swiper** - For card-swiping functionality.
+
 
 ### Setup Instructions:
 1. Clone the repository:
