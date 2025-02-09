@@ -86,6 +86,7 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 16,
     marginVertical: 50,
+    marginTop: 50,
   },
   searchInput: {
     fontSize: 16,
@@ -98,14 +99,15 @@ const styles = StyleSheet.create({
   },
   friendsContainer: {
     flexDirection: "row",
-    marginBottom: 20,
+    marginBottom: 0,
   },
   friendAvatar: {
-    width: 60,
-    height: 60,
+    width: 80,
+    height: 80,
     backgroundColor: "#E8E8E8",
-    borderRadius: 30,
+    borderRadius: 40,
     marginRight: 12,
+    marginBottom: -20,
   },
   messagesContainer: {
     marginTop: 10,

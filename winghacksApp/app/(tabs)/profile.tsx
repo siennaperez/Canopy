@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   multilineInput: {
-    height: 100,
+    height: 50,
     textAlignVertical: 'top',
   },
   saveButton: {
