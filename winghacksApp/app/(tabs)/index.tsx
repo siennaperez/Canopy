@@ -1,110 +1,263 @@
-import React, {useState} from 'react';
-import { View, Text, FlatList, StyleSheet, Image, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  Modal, 
+  Image, 
+  Dimensions, 
+  StyleSheet,
+  ScrollView,
+  Animated,
+  Platform
+} from 'react-native';
+import Swiper from 'react-native-deck-swiper';
 import { Ionicons } from '@expo/vector-icons';
-import { Modal } from 'react-native';
-import Slider from '@react-native-community/slider';
+import { auth, database } from '../../firebase';
+import { ref, onValue } from 'firebase/database';
 
-const testData = [
-  {
-    id: '1',
-    name: 'Alex Johnson',
-    bio: 'Love exploring, coffee, and tech.',
-    organization: 'ACM',
-    year: 2,
-    major: 'CS',
-    interests: ['Hiking', 'Gaming', 'AI'],
-    image: 'https://via.placeholder.com/100',
-  },
-  {
-    id: '2',
-    name: 'Taylor Green',
-    bio: 'Passionate about environmental science!',
-    organization: 'UF Environmental Club',
-    year: 4,
-    major: 'Biology',
-    interests: ['Sustainability', 'Gardening', 'Yoga'],
-    image: 'https://via.placeholder.com/100',
-  },
-];
+interface UserProfile {
+  id: string;
+  displayName: string;
+  organizations: string;
+  year: string;
+  major: string;
+  interests: string;
+  image: string;
+}
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 const IndexScreen = () => {
   const [filtersVisible, setFiltersVisible] = useState(false);
-  const [selectedOrganizations, setSelectedOrganizations] = useState<string[]>([]);
-  const [selectedYear, setSelectedYear] = useState(1);
+  const [selectedOrganizations, setSelectedOrganizations] = useState('');
+  const [selectedYear, setSelectedYear] = useState('');
   const [selectedMajor, setSelectedMajor] = useState('');
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
-  const [filteredData, setFilteredData] = useState(testData);
+  const [selectedInterests, setSelectedInterests] = useState('');
+  const [userData, setUserData] = useState<UserProfile[]>([]);
+  const [filteredData, setFilteredData] = useState<UserProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [canUndo, setCanUndo] = useState(false);
+  
+  const swiperRef = useRef(null);
+
+  const renderCard = (item: UserProfile) => {
+    if (!item) return null;
+    
+    return (
+      <View style={styles.card}>
+        <View style={styles.profileContainer}>
+          <View style={styles.profileImageContainer}>
+            <Image source={{ uri: item.image }} style={styles.profileImage} />
+          </View>
+          <Text style={styles.profileName}>{item.displayName}</Text>
+        </View>
+
+        <View style={styles.cardContent}>
+          <Text style={styles.major}>{item.major}</Text>
+          <Text style={styles.organization}>{item.organizations}</Text>
+          <Text style={styles.year}>{item.year}</Text>
+          <Text style={styles.interests}>{item.interests}</Text>
+        </View>
+      </View>
+    );
+  };
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        
+        const currentUser = auth.currentUser;
+        console.log('Auth state:', { 
+          isAuthenticated: !!currentUser,
+          userId: currentUser?.uid,
+          email: currentUser?.email 
+        });
+
+        if (!currentUser) {
+          setError('Please log in to view user profiles');
+          setLoading(false);
+          return;
+        }
+
+        const usersRef = ref(database, 'users');
+        console.log('Attempting to fetch data from:', usersRef.toString());
+        
+        const unsubscribe = onValue(usersRef, (snapshot) => {
+          console.log('Database snapshot:', { 
+            exists: snapshot.exists(),
+            childrenCount: snapshot.size,
+            key: snapshot.key
+          });
+          
+          if (snapshot.exists()) {
+            const usersData = snapshot.val();
+            const users: UserProfile[] = Object.entries(usersData).map(([id, data]: [string, any]) => ({
+              id,
+              displayName: data.displayName || '',
+              organizations: data.organizations || '',
+              year: data.year || '',
+              major: data.major || '',
+              interests: data.interests || '',
+              image: data.image || ''
+            }));
+            
+            setUserData(users);
+            setFilteredData(users);
+          } else {
+            setUserData([]);
+            setFilteredData([]);
+          }
+          setLoading(false);
+        }, (error) => {
+          console.error('Error fetching users:', error);
+          setError(error.message);
+          setLoading(false);
+        });
+
+        return () => unsubscribe();
+      } catch (err) {
+        console.error('Error setting up database listener:', err);
+        setError(err instanceof Error ? err.message : 'An error occurred while fetching user data');
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  const onSwipedLeft = (cardIndex: number) => {
+    console.log(`Swiped left on card ${cardIndex}`);
+    setCanUndo(true);
+  };
+
+  const onSwipedRight = (cardIndex: number) => {
+    console.log(`Swiped right on card ${cardIndex}`);
+    setCanUndo(true);
+  };
+
+  const handleUndo = () => {
+    if (swiperRef.current) {
+      swiperRef.current.swipeBack();
+      setCanUndo(false);
+    }
+  };
 
   const applyFilters = () => {
-    const filtered = testData.filter((item) => {
+    const filtered = userData.filter((item) => {
       const matchesOrg =
         selectedOrganizations.length === 0 ||
-        selectedOrganizations.includes(item.organization);
+        selectedOrganizations.includes(item.organizations);
       const matchesYear =
-        selectedYear === 0 || selectedYear === item.year;
+        selectedYear === '' || selectedYear === item.year;
       const matchesMajor =
         selectedMajor === '' || selectedMajor === item.major;
       const matchesInterests =
         selectedInterests.length === 0 ||
-        selectedInterests.some((interest) => item.interests.includes(interest));
+        selectedInterests === '' || selectedInterests === item.interests;
   
       return matchesOrg && matchesYear && matchesMajor && matchesInterests;
     });
   
     setFilteredData(filtered);
     setFiltersVisible(false);
-  };  
-
-  const yearLabels = {
-    1: 'Freshman',
-    2: 'Sophomore',
-    3: 'Junior',
-    4: 'Senior',
   };
-  
-  const renderItem = ({ item }: { item: any }) => (
-    <TouchableOpacity style={styles.card}>
-      {/* Profile Picture */}
-      <View style={styles.profileContainer}>
-        <View style={styles.profileImageContainer}>
-          <Image source={{ uri: item.image }} style={styles.profileImage} />
-        </View>
-      </View>
 
-      {/* User Details */}
-      <View style={styles.cardContent}>
-        <Text style={styles.name}>{item.name}</Text>
-        <Text style={styles.bio}>{item.bio}</Text>
-        <Text style={styles.major}>{item.major}</Text>
-        <Text style={styles.organization}>{item.organization}</Text>
-        <Text style={styles.year}>{yearLabels[item.year as keyof typeof yearLabels]}</Text>
-        <Text style={styles.interests}>
-          Interests: {item.interests.join(', ')}
-        </Text>
+  const availableOrganizations = [...new Set(userData.map(user => user.organizations))];
+  const availableMajors = [...new Set(userData.map(user => user.major))];
+  const availableInterests = [...new Set(userData.flatMap(user => user.interests))];
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <Text>Loading...</Text>
       </View>
-    </TouchableOpacity>
-  );
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <Text>Error: {error}</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      {/* Filters Button */}
       <TouchableOpacity
         style={styles.filterButton}
         onPress={() => setFiltersVisible(true)}
       >
-        <Ionicons name="filter" size={24} color="#ffffff" />
+        <Ionicons displayName="filter" size={24} color="#ffffff" />
         <Text style={styles.filterText}>Filters</Text>
       </TouchableOpacity>
 
-      {/* Filter Modal */}
+
+      <View style={styles.swiperContainer}>
+        <Swiper
+          ref={swiperRef}
+          cards={filteredData}
+          renderCard={renderCard}
+          onSwipedLeft={onSwipedLeft}
+          onSwipedRight={onSwipedRight}
+          cardIndex={0}
+          backgroundColor="transparent"
+          stackSize={3}
+          stackScale={10}
+          stackSeparation={14}
+          overlayLabels={{
+            left: {
+              title: 'PASS',
+              style: {
+                label: {
+                  backgroundColor: '#FF0000',
+                  color: '#fff',
+                  fontSize: 24
+                },
+                wrapper: {
+                  flexDirection: 'column',
+                  alignItems: 'flex-end',
+                  justifyContent: 'flex-start',
+                  marginTop: 20,
+                  marginLeft: -20
+                }
+              }
+            },
+            right: {
+              title: 'CONNECT',
+              style: {
+                label: {
+                  backgroundColor: '#4CAF50',
+                  color: '#fff',
+                  fontSize: 24
+                },
+                wrapper: {
+                  flexDirection: 'column',
+                  alignItems: 'flex-start',
+                  justifyContent: 'flex-start',
+                  marginTop: 20,
+                  marginLeft: 20
+                }
+              }
+            }
+          }}
+          animateOverlayLabelsOpacity
+          animateCardOpacity
+          swipeBackCard
+        />
+      </View>
+
       <Modal visible={filtersVisible} animationType="slide">
         <View style={styles.modalContainer}>
           <Text style={styles.modalTitle}>Apply Filters</Text>
 
-          {/* Organizations Multi-Select */}
           <Text style={styles.label}>Organizations</Text>
           <ScrollView style={styles.scrollContainer}>
-            {['UF Computer Science', 'UF Environmental Club'].map((org) => (
+            {availableOrganizations.map((org) => (
               <TouchableOpacity
                 key={org}
                 style={[
@@ -112,13 +265,11 @@ const IndexScreen = () => {
                   selectedOrganizations.includes(org) && styles.selectedOption,
                 ]}
                 onPress={() => {
-                  setSelectedOrganizations((prev) => {
-                    if (prev.includes(org)) {
-                      return prev.filter((item) => item !== org);
-                    } else {
-                      return [...prev, org];
-                    }
-                  });
+                  if (selectedOrganizations.includes(org)) {
+                    setSelectedOrganizations((prev) => prev.filter((item) => item !== org));
+                  } else {
+                    setSelectedOrganizations((prev) => [...prev, org]);
+                  }
                 }}
               >
                 <Text>{org}</Text>
@@ -126,59 +277,38 @@ const IndexScreen = () => {
             ))}
           </ScrollView>
 
-          {/* Year Slider */}
-          <Text style={styles.label}>Year</Text>
-            <Slider
-            style={{ width: '100%', height: 40 }}
-            minimumValue={1}
-            maximumValue={4}
-            step={1}
-            value={selectedYear} // Keep state as a number
-            onValueChange={(value) => setSelectedYear(value)} // Directly set number
-          />
-          <Text style={styles.yearText}>{`Year: ${selectedYear}`}</Text>
+          <Text style={styles.label}>Majors</Text>
+          <ScrollView style={styles.scrollContainer}>
+            {availableMajors.map((major) => (
+              <TouchableOpacity
+                key={major}
+                style={[
+                  styles.option,
+                  selectedMajor === major && styles.selectedOption,
+                ]}
+                onPress={() => setSelectedMajor(major)}
+              >
+                <Text>{major}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
 
-          {/* Major Single-Select */}
-          <Text style={styles.label}>Major</Text>
-          {['CS', 'Biology', 'Engineering'].map((major) => (
-            <TouchableOpacity
-              key={major}
-              style={[
-                styles.option,
-                selectedMajor === major && styles.selectedOption,
-              ]}
-              onPress={() => setSelectedMajor(major)}
-            >
-              <Text>{major}</Text>
-            </TouchableOpacity>
-          ))}
-
-          {/* Interests Multi-Select */}
           <Text style={styles.label}>Interests</Text>
           <ScrollView style={styles.scrollContainer}>
-            {['Hiking', 'Gaming', 'Reading', 'Music'].map((interest) => (
+            {availableInterests.map((interest) => (
               <TouchableOpacity
                 key={interest}
                 style={[
                   styles.option,
-                  selectedInterests.includes(interest) && styles.selectedOption,
+                  selectedInterests === interest && styles.selectedOption,
                 ]}
-                onPress={() => {
-                  setSelectedInterests((prev) => {
-                    if (prev.includes(interest)) {
-                      return prev.filter((item) => item !== interest);
-                    } else {
-                      return [...prev, interest];
-                    }
-                  });
-                }}                
+                onPress={() => setSelectedInterests(interest)}
               >
                 <Text>{interest}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
 
-          {/* Apply Filters */}
           <View style={styles.modalButtons}>
             <TouchableOpacity
               style={styles.modalButton}
@@ -192,25 +322,6 @@ const IndexScreen = () => {
           </View>
         </View>
       </Modal>
-
-      {/* User Cards */}
-      <FlatList
-        data={filteredData}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        horizontal={true}
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          backgroundColor: '#E3F4E0',
-          paddingTop: 90,
-        }}
-      />
-      {/* Add Friend Button below card*/}
-      <TouchableOpacity style={styles.addFriendButton} onPress={() => console.log('Add Friend Pressed')}>
-        <Text style={styles.addFriendButtonText}>Add Friend</Text>
-      </TouchableOpacity>
     </View>
   );
 };
@@ -218,117 +329,91 @@ const IndexScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#E3F4E0',
+    backgroundColor: '#CDE2D0',
+    paddingTop: 20,
+  },
+  swiperContainer: {
+    flex: 1,
+    marginTop: 75,
   },
   card: {
-    width: Dimensions.get('window').width * 0.8,
-    height: Dimensions.get('window').height * 0.65,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
+    height: SCREEN_HEIGHT * 0.65,
+    width: SCREEN_WIDTH * 0.9,
     borderRadius: 20,
-    marginHorizontal: 16,
-    marginVertical: 50,
-    padding: 16,
+    backgroundColor: '#fff',
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 10,
-    elevation: 4,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    padding: 20,
   },
   profileContainer: {
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   profileImageContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    marginTop: 70,
+    overflow: 'hidden',
     backgroundColor: '#d3d3d3',
-    height: 120,
-    width: 120,
-    borderRadius: 60,
     marginBottom: 8,
   },
   profileImage: {
-    height: 220,
-    width: 220,
-    borderRadius: 40,
-    lineHeight: 24,
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  profileName: {
+    fontSize: 24,
+    fontWeight: '600',
+    color: '#333',
+    textAlign: 'center',
+    marginTop: 15,
   },
   cardContent: {
-    width: '100%',
     alignItems: 'center',
-    marginBottom: 8,
-  },
-  name: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
-    lineHeight: 24,
-  },
-  bio: {
-    fontSize: 15,
-    color: '#555',
-    textAlign: 'center',
-    marginHorizontal: 16,
-    marginBottom: 6,
-    lineHeight: 20,
-  },
-  organization: {
-    fontSize: 15,
-    color: '#777',
-    marginTop: 2,
-    textAlign: 'center',
-    marginHorizontal: 16,
-    lineHeight: 24,
-  },
-  year: {
-    fontSize: 15,
-    color: '#777',
-    textAlign: 'center',
-    marginHorizontal: 16,
-    lineHeight: 24,
+    marginTop: 10,
   },
   major: {
-    fontSize: 15,
-    color: '#777',
-    textAlign: 'center',
-    marginHorizontal: 16,
-    lineHeight: 24,
+    fontSize: 18,
+    color: '#666',
+    marginBottom: 8,
+  },
+  organization: {
+    fontSize: 18,
+    color: '#666',
+    marginBottom: 8,
+  },
+  year: {
+    fontSize: 18,
+    color: '#666',
+    marginBottom: 8,
   },
   interests: {
-    fontSize: 15,
-    color: '#888',
+    fontSize: 18,
+    color: '#666',
     textAlign: 'center',
-    marginHorizontal: 16,
-    marginTop: 8,
-    lineHeight: 24,
+    marginTop: 0,
   },
-  imageContainer: {
-    alignItems: 'center',
-  },
-  largeImagePlaceholder: {
-    height: 200,
-    width: 200,
-    borderRadius: 10,
-    backgroundColor: '#0000FF',
+  centerContent: {
     justifyContent: 'center',
     alignItems: 'center',
   },
-  imageText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
   filterButton: {
     position: 'absolute',
-    top: 60,
+    top: 65,
     left: 20,
     borderRadius: 20,
     padding: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    zIndex: 10,
+    zIndex: 0,
     backgroundColor: '#FFCDAB',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
@@ -337,17 +422,19 @@ const styles = StyleSheet.create({
   },
   filterText: {
     color: '#ffffff',
-    marginLeft: 5,
+    fontWeight: 'bold',
+    marginLeft: -5,
   },
   modalContainer: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#cbd9bf',
+    backgroundColor: '#CDE2D0',
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 20,
+    marginTop: 90,
   },
   label: {
     fontSize: 16,
@@ -377,42 +464,18 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
     padding: 12,
     borderRadius: 8,
-    backgroundColor: '#3b82f6',
+    backgroundColor: '#FFCDAB',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
   },
   modalButtonText: {
     color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  yearText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#555',
-    textAlign: 'center',
-    marginVertical: 8,
-  },
-  addFriendButton: {
-    position: 'absolute',
-    bottom: 115,
-    alignSelf: 'center',
-    backgroundColor: '#FFCDAB',
-    paddingVertical: 8,
-    paddingHorizontal: 24,
-    borderRadius: 25,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 5,
-    zIndex: 10,
-  },
-  addFriendButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },  
 });
 
 export default IndexScreen;
