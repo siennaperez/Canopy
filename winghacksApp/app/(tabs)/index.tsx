@@ -9,7 +9,7 @@ const testData = [
     id: '1',
     name: 'Alex Johnson',
     bio: 'Love exploring, coffee, and tech.',
-    organization: 'UF Computer Science',
+    organization: 'ACM',
     year: 2,
     major: 'CS',
     interests: ['Hiking', 'Gaming', 'AI'],
@@ -75,8 +75,8 @@ const IndexScreen = () => {
       <View style={styles.cardContent}>
         <Text style={styles.name}>{item.name}</Text>
         <Text style={styles.bio}>{item.bio}</Text>
+        <Text style={styles.major}>{item.major}</Text>
         <Text style={styles.organization}>{item.organization}</Text>
-        <Text style={styles.year}></Text>
         <Text style={styles.year}>{yearLabels[item.year as keyof typeof yearLabels]}</Text>
         <Text style={styles.interests}>
           Interests: {item.interests.join(', ')}
@@ -164,7 +164,7 @@ const IndexScreen = () => {
                   selectedInterests.includes(interest) && styles.selectedOption,
                 ]}
                 onPress={() => {
-                  setSelectedOrganizations((prev) => {
+                  setSelectedInterests((prev) => {
                     if (prev.includes(interest)) {
                       return prev.filter((item) => item !== interest);
                     } else {
@@ -204,7 +204,7 @@ const IndexScreen = () => {
         contentContainerStyle={{
           paddingHorizontal: 16,
           backgroundColor: '#E3F4E0',
-          paddingTop: 80,
+          paddingTop: 90,
         }}
       />
       {/* Add Friend Button below card*/}
@@ -221,13 +221,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#E3F4E0',
   },
   card: {
-    width: Dimensions.get('window').width * 0.8, 
-    height: Dimensions.get('window').height * 0.75, 
+    width: Dimensions.get('window').width * 0.8,
+    height: Dimensions.get('window').height * 0.65,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#ffffff', 
+    backgroundColor: '#ffffff',
     borderRadius: 20,
-    marginHorizontal: 16, 
+    marginHorizontal: 16,
+    marginVertical: 50,
     padding: 16,
     shadowColor: '#000',
     shadowOpacity: 0.1,
@@ -237,60 +238,66 @@ const styles = StyleSheet.create({
   },
   profileContainer: {
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   profileImageContainer: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#d3d3d3', // placeholder for the profile picture
-    height: 80,
-    width: 80,
-    borderRadius: 40,
-    marginBottom: 12,
+    backgroundColor: '#d3d3d3',
+    height: 120,
+    width: 120,
+    borderRadius: 60,
+    marginBottom: 8,
   },
   profileImage: {
-    height: 150,
-    width: 150,
+    height: 220,
+    width: 220,
     borderRadius: 40,
     lineHeight: 24,
   },
   cardContent: {
     width: '100%',
-    alignItems: 'center', 
-    marginBottom: 12,
+    alignItems: 'center',
+    marginBottom: 8,
   },
   name: {
-    fontSize: 25,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#333',
     lineHeight: 24,
   },
   bio: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#555',
     textAlign: 'center',
     marginHorizontal: 16,
-    marginBottom: 8,
-    lineHeight: 24,
+    marginBottom: 6,
+    lineHeight: 20,
   },
   organization: {
-    fontSize: 12,
+    fontSize: 15,
     color: '#777',
     marginTop: 2,
     textAlign: 'center',
     marginHorizontal: 16,
-    marginBottom: 4,
     lineHeight: 24,
   },
   year: {
-    fontSize: 12,
+    fontSize: 15,
+    color: '#777',
+    textAlign: 'center',
+    marginHorizontal: 16,
+    lineHeight: 24,
+  },
+  major: {
+    fontSize: 15,
     color: '#777',
     textAlign: 'center',
     marginHorizontal: 16,
     lineHeight: 24,
   },
   interests: {
-    fontSize: 12,
+    fontSize: 15,
     color: '#888',
     textAlign: 'center',
     marginHorizontal: 16,
@@ -315,14 +322,18 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     position: 'absolute',
-    top: 30,
+    top: 60,
     left: 20,
-    backgroundColor: '#E8A68E',
     borderRadius: 20,
     padding: 10,
     flexDirection: 'row',
     alignItems: 'center',
     zIndex: 10,
+    backgroundColor: '#FFCDAB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
   },
   filterText: {
     color: '#ffffff',
@@ -357,34 +368,34 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   modalButtons: {
-    flexDirection: 'row', // Buttons side-by-side
-    justifyContent: 'space-between', // Space between the buttons
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginTop: 16,
   },
   modalButton: {
-    flex: 1, // Ensure equal width buttons
-    marginHorizontal: 8, // Add spacing between buttons
+    flex: 1,
+    marginHorizontal: 8,
     padding: 12,
     borderRadius: 8,
-    backgroundColor: '#3b82f6', // Blue button color
+    backgroundColor: '#3b82f6',
     alignItems: 'center',
     justifyContent: 'center',
   },
   modalButtonText: {
-    color: '#ffffff', // White text color
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',
   },
   yearText: {
-    fontSize: 16, // Slightly larger text
-    fontWeight: '600', // Semi-bold for emphasis
-    color: '#555', // Neutral gray for readability
-    textAlign: 'center', // Centered text
-    marginVertical: 8, // Spacing around the text
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#555',
+    textAlign: 'center',
+    marginVertical: 8,
   },
   addFriendButton: {
     position: 'absolute',
-    bottom: 90,
+    bottom: 115,
     alignSelf: 'center',
     backgroundColor: '#FFCDAB',
     paddingVertical: 12,
@@ -395,6 +406,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 5,
     elevation: 5,
+    zIndex: 10,
   },
   addFriendButtonText: {
     color: '#ffffff',
